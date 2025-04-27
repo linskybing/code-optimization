@@ -1,0 +1,14 @@
+matrix_v1
+matrix_v2
+matrix_v3
+main
+.vscode
+*.o
+*.obj
+*.dll
+*.so
+*.a
+*.lib
+*.tmp
+*.txt
+ans.cpp
