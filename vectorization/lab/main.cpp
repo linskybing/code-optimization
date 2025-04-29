@@ -4,10 +4,12 @@
 #include <cstdlib>
 #include <chrono>
 #include <immintrin.h>
-#define TILE 32
-#define min(a, b) ((a < b)? a : b)
 
 using real_t = float;
+
+inline int align_to_8(int n) {
+    return (n + 7) & ~7;
+}
 
 void write_matrix(const std::string &filename, const real_t *data, size_t count, bool append=false) {
     std::ofstream ofs;
@@ -28,42 +30,58 @@ inline void matmul_avx2(real_t *A, real_t *B, real_t *C, int M, int K, int N) {
     for (int i = 0; i < M; ++i) {
         for (int k = 0; k < K; ++k) {
             __m256 a_vec = _mm256_set1_ps(A[i * K + k]);
-            for (int j = 0; j < N - 7; j += 8) {
-                __m256 b_vec = _mm256_load_ps(&B[k * N + j]);
-                __m256 c_vec = _mm256_load_ps(&C[i * N + j]);
-                _mm256_store_ps(&C[i * N + j], _mm256_fmadd_ps(a_vec, b_vec, c_vec));
+            int j = 0;
+            // avx2
+            for (; j <= N - 8; j += 8) {
+                __m256 b_vec = _mm256_loadu_ps(&B[k * N + j]);
+                __m256 c_vec = _mm256_loadu_ps(&C[i * N + j]);
+                _mm256_storeu_ps(&C[i * N + j], _mm256_add_ps(_mm256_mul_ps(a_vec, b_vec), c_vec));
+            }
+
+            // remainder part
+            for (; j < N; ++j) {
+                C[i * N + j] += A[i * K + k] * B[k * N + j];
             }
         }
     }
 }
 
 void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, int N) {
-    for (int ii = 0; ii < M; ii += TILE) {
-        for (int kk = 0; kk < N; kk += TILE) {
-            for (int jj = 0; jj < K; jj += TILE) {
-                int i_end = min(ii + TILE, M);
-                int j_end = min(jj + TILE, K);
-                int k_end = min(kk + TILE, N);
-                for (int i = ii; i < i_end; i++) {
-                    // TODO 1: Process 8 elements at a time (AVX2 handles 8 floats)
-                    for (int j = jj; j < j_end; j += /* VLEN */) {
-                        // TODO 2: Load C matrix values into AVX2 register
-                        __m256 c = /* TODO */;
 
-                        // Core computation: C[i][j:j+7] += A[i][k] * B[k][j:j+7]
-                        for (int k = kk; k < k_end; k++) {
-                            // TODO 3: Broadcast A[i][k] to all 8 positions
-                            __m256 a = /* TODO */;
+// Define block sizes
+    constexpr int BI = __;    // TODO: set block size for I dimension
+    constexpr int BJ = __;    // TODO: set block size for J dimension
+    constexpr int BK = __;    // TODO: set block size for K dimension
+    constexpr int VLEN = __;  // TODO: set AVX2 vector length (usually 8)
 
-                            // TODO 4: Load B[k][j:j+7] into AVX2 register
-                            __m256 b =  /* TODO */;
+    // TODO: initialize matrix C to zero
 
-                            // TODO 5: Use fused multiply-add (FMA) operation
-                            c = /* TODO */;
+    // TODO: loop over blocks of A and B
+    for (int ii = 0; ii < M; ii += BI) {
+        int i_end = std::min(ii + BI, M);
+        for (int jj = 0; jj < N; jj += BJ) {
+            int j_end = std::min(jj + BJ, N);
+            for (int kk = 0; kk < K; kk += BK) {
+                int k_end = std::min(kk + BK, K);
+
+                // TODO: compute block C[ii:i_end, jj:j_end]
+                for (int i = ii; i < i_end; ++i) {
+                    for (int k = kk; k < k_end; ++k) {
+                        // TODO: broadcast A[i * K + k] into __m256 a_vec
+
+                        int j = jj;
+                        // TODO: vectorized inner loop over j
+                        for (; j + VLEN - 1 < j_end; j += VLEN) {
+                            // TODO: load C[i * N + j] into __m256 c_vec
+                            // TODO: load B[k * N + j] into __m256 b_vec
+                            // TODO: perform c_vec = a_vec * b_vec + c_vec
+                            // TODO: store c_vec back to C[i * N + j]
                         }
-                        
-                        // TODO 6: Store results back to C matrix
-                        /* TODO */
+
+                        // TODO: scalar remainder loop over j to handle leftover elements
+                        for (; j < j_end; ++j) {
+                            // TODO: accumulate A[i * K + k] * B[k * N + j] into C[i * N + j]
+                        }
                     }
                 }
             }
@@ -82,9 +100,10 @@ int main(int argc, char *argv[]) {
     int N = std::stoi(argv[3]);
 
     // Aligned allocations for better vectorization
-    real_t *A = reinterpret_cast<real_t*>(aligned_alloc(32, M * K * sizeof(real_t)));
-    real_t *B = reinterpret_cast<real_t*>(aligned_alloc(32, K * N * sizeof(real_t)));
-    real_t *C = reinterpret_cast<real_t*>(aligned_alloc(32, M * N * sizeof(real_t)));
+    //int N_aligned = align_to_8(N);
+    real_t *A = (real_t *)(_mm_malloc(M * K * sizeof(real_t), 32));
+    real_t *B = (real_t *)(_mm_malloc(K * N * sizeof(real_t), 32));
+    real_t *C = (real_t *)(_mm_malloc(M * N * sizeof(real_t), 32));
 
     memset(C, 0, M * N * sizeof(real_t));
 
@@ -105,19 +124,21 @@ int main(int argc, char *argv[]) {
 
     // Matrix multiplication
     auto start = std::chrono::high_resolution_clock::now();
-    
+
+    //matmul_avx2(A, B, C, M, K, N);
     matrix_mult_avx2_optimized(A, B, C, M, K, N);
     
     auto end = std::chrono::high_resolution_clock::now();
+
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Execution time: " << elapsed.count() << " s\n";
+    std::cout << "matmul_avx2() Execution time: " << elapsed.count() << " s\n";
 
     write_matrix("c.bin", C, static_cast<size_t>(M) * N, false);
 
     // Free allocated memory
-    free(A);
-    free(B);
-    free(C);
+    _mm_free(A);
+    _mm_free(B);
+    _mm_free(C);
 
     return 0;
 }

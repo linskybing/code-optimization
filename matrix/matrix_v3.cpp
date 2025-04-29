@@ -4,7 +4,7 @@
 #include <chrono>
 #include <iostream>
 #define SIZE (1 << 11)
-#define TILE 32
+#define TILE 64
 
 typedef float real_t;
 

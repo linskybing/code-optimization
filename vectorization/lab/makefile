@@ -6,13 +6,13 @@ BIN = gen main float-diff
 all: $(BIN)
 
 gen: gen.cpp
-	$(CXX) $(CXXFLAGS) -mfma $< -o $@
+	$(CXX) -O3 $< -o $@
 
 float-diff: float-diff.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 main: main.cpp
-	$(CC) $(CFLAGS) -mavx2 -mfma $< -o $@
+	$(CC) $(CFLAGS) -mavx2 $< -o $@
 
 .PHONY: clean
 

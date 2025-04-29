@@ -3,7 +3,7 @@
 #include <string.h>
 #include <chrono>
 #include <iostream>
-#define SIZE 2048
+#define SIZE (1 << 11)
 
 typedef float real_t;
 

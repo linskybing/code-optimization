@@ -31,8 +31,8 @@ int main() {
     float* src_aligned = (float*)_mm_malloc(ARRAY_SIZE * sizeof(float), 32);
     float* dst_aligned = (float*)_mm_malloc(ARRAY_SIZE * sizeof(float), 32);
     
-    float* src_unaligned = new float[ARRAY_SIZE + 8];
-    float* dst_unaligned = new float[ARRAY_SIZE + 8];
+    float* src_unaligned = (float*) malloc((ARRAY_SIZE + 8) * sizeof(float));
+    float* dst_unaligned = (float*) malloc((ARRAY_SIZE + 8) * sizeof(float));
     float* misaligned_src = src_unaligned + 1;
     float* misaligned_dst = dst_unaligned + 1;
     
@@ -72,8 +72,8 @@ int main() {
     
     _mm_free(src_aligned);
     _mm_free(dst_aligned);
-    delete[] src_unaligned;
-    delete[] dst_unaligned;
+    free(src_unaligned);
+    free(dst_unaligned);
     
     return 0;
 }
