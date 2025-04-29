@@ -4,12 +4,9 @@
 #include <cstdlib>
 #include <chrono>
 #include <immintrin.h>
+#include <omp.h>
 
 using real_t = float;
-
-inline int align_to_8(int n) {
-    return (n + 7) & ~7;
-}
 
 void write_matrix(const std::string &filename, const real_t *data, size_t count, bool append=false) {
     std::ofstream ofs;
@@ -27,6 +24,8 @@ void write_matrix(const std::string &filename, const real_t *data, size_t count,
 
 
 inline void matmul_avx2(real_t *A, real_t *B, real_t *C, int M, int K, int N) {
+    
+    #pragma omp parallel for collapse(2)
     for (int i = 0; i < M; ++i) {
         for (int k = 0; k < K; ++k) {
             __m256 a_vec = _mm256_set1_ps(A[i * K + k]);
@@ -45,7 +44,7 @@ inline void matmul_avx2(real_t *A, real_t *B, real_t *C, int M, int K, int N) {
         }
     }
 }
-
+/*
 void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, int N) {
 
 // Define block sizes
@@ -57,6 +56,7 @@ void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, in
     // TODO: initialize matrix C to zero
 
     // TODO: loop over blocks of A and B
+    #pragma omp parallel for collapse(3)
     for (int ii = 0; ii < M; ii += BI) {
         int i_end = std::min(ii + BI, M);
         for (int jj = 0; jj < N; jj += BJ) {
@@ -87,7 +87,7 @@ void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, in
             }
         }
     }
-}
+}*/
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
@@ -125,13 +125,15 @@ int main(int argc, char *argv[]) {
     // Matrix multiplication
     auto start = std::chrono::high_resolution_clock::now();
 
-    //matmul_avx2(A, B, C, M, K, N);
-    matrix_mult_avx2_optimized(A, B, C, M, K, N);
+    matmul_avx2(A, B, C, M, K, N);
+
+    // [TODO]
+    //matrix_mult_avx2_optimized(A, B, C, M, K, N);
     
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "matmul_avx2() Execution time: " << elapsed.count() << " s\n";
+    std::cout << "Execution time: " << elapsed.count() << " s\n";
 
     write_matrix("c.bin", C, static_cast<size_t>(M) * N, false);
 

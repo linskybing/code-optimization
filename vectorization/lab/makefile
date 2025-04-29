@@ -12,7 +12,7 @@ float-diff: float-diff.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 main: main.cpp
-	$(CC) $(CFLAGS) -mavx2 $< -o $@
+	$(CC) $(CFLAGS) -mavx2 -fopenmp $< -o $@
 
 .PHONY: clean
 
