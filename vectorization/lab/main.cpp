@@ -50,9 +50,7 @@ void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, in
     constexpr int BI = __;    // TODO: set block size for I dimension
     constexpr int BJ = __;    // TODO: set block size for J dimension
     constexpr int BK = __;    // TODO: set block size for K dimension
-    constexpr int VLEN = __;  // TODO: set AVX2 vector length (usually 8)
-
-    // TODO: initialize matrix C to zero
+    constexpr int VLEN = __;  // TODO: set AVX2 vector length
 
     // TODO: loop over blocks of A and B
     for (int ii = 0; ii < M; ii += BI) {
@@ -123,10 +121,10 @@ int main(int argc, char *argv[]) {
     // Matrix multiplication
     auto start = std::chrono::high_resolution_clock::now();
 
-    matmul_avx2(A, B, C, M, K, N);
+    //matmul_avx2(A, B, C, M, K, N);
 
     // [TODO]
-    //matrix_mult_avx2_optimized(A, B, C, M, K, N);
+    matrix_mult_avx2_optimized(A, B, C, M, K, N);
     
     auto end = std::chrono::high_resolution_clock::now();
 
