@@ -25,7 +25,6 @@ void write_matrix(const std::string &filename, const real_t *data, size_t count,
 
 inline void matmul_avx2(real_t *A, real_t *B, real_t *C, int M, int K, int N) {
     
-    #pragma omp parallel for collapse(2)
     for (int i = 0; i < M; ++i) {
         for (int k = 0; k < K; ++k) {
             __m256 a_vec = _mm256_set1_ps(A[i * K + k]);
@@ -56,7 +55,6 @@ void matrix_mult_avx2_optimized(real_t *A, real_t *B, real_t*C, int M, int K, in
     // TODO: initialize matrix C to zero
 
     // TODO: loop over blocks of A and B
-    #pragma omp parallel for collapse(3)
     for (int ii = 0; ii < M; ii += BI) {
         int i_end = std::min(ii + BI, M);
         for (int jj = 0; jj < N; jj += BJ) {
